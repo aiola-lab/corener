@@ -88,7 +88,7 @@ def load_pretrained_model(
         model = model.to(device)
 
     dataset = MTLDataset(
-        types_path=(Path(artifact_path) / "types.json").as_posix(),
+        types=(Path(artifact_path) / "types.json").as_posix(),
         tokenizer=tokenizer,
         train_mode=False,
     )

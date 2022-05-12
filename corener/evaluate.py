@@ -29,7 +29,7 @@ def load_pretrained_model(
     tokenizer = AutoTokenizer.from_pretrained(artifact_path)
     model = Corener.from_pretrained(artifact_path, map_location=device)
     dataset = MTLDataset(
-        types_path=(Path(artifact_path) / "types.json").as_posix(),
+        types=(Path(artifact_path) / "types.json").as_posix(),
         tokenizer=tokenizer,
         train_mode=False,
     )

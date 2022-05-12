@@ -45,6 +45,7 @@ class Corener(nn.Module):
             max_pairs=self._max_pairs,
         )
         self.backbone.config.update(dict(corener_config=corener_config))
+        self.config = self.backbone.config
 
         self.dropout = nn.Dropout(self.backbone.config.hidden_dropout_prob)
 
@@ -113,7 +114,8 @@ class Corener(nn.Module):
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
         torch.save(self.state_dict(), path / "pytorch_model.bin", **kwargs)
-        self.backbone.config.save_pretrained(path)
+        self.config.update(**kwargs)
+        self.config.save_pretrained(path)
 
     @classmethod
     def from_pretrained(cls, path, map_location=None):

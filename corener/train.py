@@ -28,7 +28,7 @@ def main(args):
     # load data
     train_dataset = MTLDataset(
         dataset_or_path=args.train_path,
-        types_path=args.types_path,
+        types=args.types_path,
         tokenizer=tokenizer,
         train_mode=True,
     )
@@ -48,7 +48,7 @@ def main(args):
     if args.val_path is not None and args.do_eval:
         val_dataset = MTLDataset(
             dataset_or_path=args.val_path,
-            types_path=args.types_path,
+            types=args.types_path,
             tokenizer=tokenizer,
             train_mode=False,  # eval mode
         )
@@ -170,7 +170,9 @@ def main(args):
 
     out_path = Path(args.artifact_path)
     # save model
-    model.module.save_pretrained(args.artifact_path)
+    model.module.save_pretrained(
+        args.artifact_path, types=train_dataset.data_parser.types
+    )
     tokenizer.save_pretrained(args.artifact_path)
     # save training args
     with open(out_path / "training_args.json", "w") as f:
