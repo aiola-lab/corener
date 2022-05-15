@@ -113,8 +113,8 @@ class Corener(nn.Module):
     def save_pretrained(self, path, **kwargs):
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
-        torch.save(self.state_dict(), path / "pytorch_model.bin", **kwargs)
-        self.config.update(**kwargs)
+        torch.save(self.state_dict(), path / "pytorch_model.bin")
+        self.config.update(kwargs)
         self.config.save_pretrained(path)
 
     @classmethod

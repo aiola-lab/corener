@@ -510,7 +510,8 @@ class MTLDataset(Dataset):
         return len(self._documents)
 
     def get_example(self, index: int):
-        return self.__getitem__(index=index)
+        batch = self.__getitem__(index=index)
+        return batch.__class__(*[t.unsqueeze(0) for t in batch])  # to batch-size of one
 
     def __getitem__(self, index: int):
         doc = self._documents[index]

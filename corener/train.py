@@ -163,7 +163,14 @@ def main(args):
                 and val_loader is not None
                 and (epoch + 1) % args.eval_every == 0
             ):
-                _ = evaluate(model, dataloader=val_loader, device=device)
+                _ = evaluate(
+                    model,
+                    dataloader=val_loader,
+                    device=device,
+                    rel_filter_threshold=args.rel_filter_threshold,
+                    ref_filter_threshold=args.ref_filter_threshold,
+                    no_overlapping=args.no_overlapping,
+                )
 
         if args.milestones is not None:
             step_scheduler.step()
@@ -272,7 +279,7 @@ if __name__ == "__main__":
         default=100,
         help="Number of negative relation samples per document (sentence)",
     )
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=7.5e-5, help="Learning rate")
     parser.add_argument(
         "--lr-warmup",
         type=float,

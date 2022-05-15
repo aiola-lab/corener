@@ -11,11 +11,15 @@ Our model extends the [SpERT](https://github.com/lavis-nlp/spert) framework.
 ```bash
 cd corener-mtl
 pip install -e .
+# also install spacy en model
+python -m spacy download en_core_web_sm
 ```
 
 ## Usage
 
 ```python
+import json
+
 from transformers import AutoTokenizer
 from corener.models import Corener, ModelOutput
 from corener.data import MTLDataset
@@ -48,7 +52,7 @@ output: ModelOutput = model(
     inference=True,
 )
 
-print(convert_model_output(output=output, batch=example, dataset=dataset))
+print(json.dumps(convert_model_output(output=output, batch=example, dataset=dataset), indent=2))
 ```
 
 

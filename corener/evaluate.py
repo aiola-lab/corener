@@ -38,7 +38,14 @@ def load_pretrained_model(
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, device):
+def evaluate(
+    model,
+    dataloader,
+    device,
+    rel_filter_threshold,
+    ref_filter_threshold,
+    no_overlapping=False,
+):
     # NOTE: workaround to insure examples are not shuffled
     assert isinstance(
         dataloader.sampler, torch.utils.data.sampler.SequentialSampler
@@ -48,8 +55,8 @@ def evaluate(model, dataloader, device):
 
     ner_rel_evaluator = EntityRelEvaluator(
         dataloader.dataset,
-        rel_filter_threshold=args.rel_filter_threshold,
-        no_overlapping=args.no_overlapping,
+        rel_filter_threshold=rel_filter_threshold,
+        no_overlapping=no_overlapping,
         relations_name="relations",
         spans_name="entities",
         is_ner_rel=True,
@@ -57,8 +64,8 @@ def evaluate(model, dataloader, device):
 
     emd_cr_evaluator = EntityRelEvaluator(
         dataloader.dataset,
-        rel_filter_threshold=args.ref_filter_threshold,
-        no_overlapping=args.no_overlapping,
+        rel_filter_threshold=ref_filter_threshold,
+        no_overlapping=no_overlapping,
         relations_name="references",
         spans_name="mentions",
         is_ner_rel=False,
@@ -105,7 +112,12 @@ def main(args):
         ),
     )
     ner_eval, rel_eval, rel_nec_eval, emd_eval, ref_eval, ref_emd_eval = evaluate(
-        model=model, dataloader=dataloader, device=device
+        model=model,
+        dataloader=dataloader,
+        device=device,
+        rel_filter_threshold=args.rel_filter_threshold,
+        ref_filter_threshold=args.ref_filter_threshold,
+        no_overlapping=args.no_overlapping,
     )
 
 
