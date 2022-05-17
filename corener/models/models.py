@@ -141,11 +141,11 @@ class Corener(nn.Module):
         model_dict.update(pretrained_dict)
         # load the new state dict
         self.load_state_dict(model_dict)
-
-        logging.info(
-            f"Some weights of the model checkpoint at {path_or_model_name} "
-            f"were not used when initializing Corener: {unused_weights}"
-        )
+        if len(unused_weights) > 0:
+            logging.info(
+                f"Some weights of the model checkpoint at {path_or_model_name} "
+                f"were not used when initializing Corener: {unused_weights}"
+            )
 
     @classmethod
     def from_pretrained(cls, path_or_model_name, cache_dir=None, **kwargs):
