@@ -54,10 +54,21 @@ class DataParser:
         # getting types of entities and relations
         if isinstance(types, str):
             with open(types, "r") as f:
-                self.types = json.load(f, object_pairs_hook=OrderedDict)
+                self.types = json.load(f)
+                self.types = OrderedDict(
+                    {
+                        k: OrderedDict(sorted(v.items(), key=lambda x: x[0]))
+                        for k, v in self.types.items()
+                    }
+                )
                 self._parse_types(self.types)
         else:
-            self.types = OrderedDict(types)
+            self.types = OrderedDict(
+                {
+                    k: OrderedDict(sorted(v.items(), key=lambda x: x[0]))
+                    for k, v in types.items()
+                }
+            )
             self._parse_types(self.types)
 
         self._tokenizer = tokenizer

@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, List, Union
 
 import torch
@@ -47,7 +46,7 @@ def text_to_tokens(documents: List[str], nlp):
 
 
 def load_pretrained_model(
-    artifact_path: str, device=None, max_context_size: int = None
+    artifact_path: str, device=None, max_context_size: int = None, cache_dir=None
 ):
     """
 
@@ -61,8 +60,8 @@ def load_pretrained_model(
     -------
 
     """
-    tokenizer = AutoTokenizer.from_pretrained(artifact_path)
-    model = Corener.from_pretrained(artifact_path)
+    tokenizer = AutoTokenizer.from_pretrained(artifact_path, cache_dir=cache_dir)
+    model = Corener.from_pretrained(artifact_path, cache_dir=cache_dir)
 
     if (
         max_context_size is not None
@@ -186,7 +185,10 @@ def main(args):
     device = get_device(gpus=args.gpu, no_cuda=args.no_cuda)
 
     model, dataset, tokenizer = load_pretrained_model(
-        args.artifact_path, device=device, max_context_size=args.max_context_size
+        args.artifact_path,
+        device=device,
+        max_context_size=args.max_context_size,
+        cache_dir=args.cache_dir,
     )
     config = InferenceInput(
         data=args.input,
@@ -228,6 +230,12 @@ if __name__ == "__main__":
         "--artifact-path",
         type=str,
         help="Path to cached model/tokenizer etc.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        default=None,
+        type=str,
+        help="cache dir.",
     )
     parser.add_argument(
         "--max-context-size",
