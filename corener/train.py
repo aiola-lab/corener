@@ -66,7 +66,7 @@ def main(args):
 
     # model
     model = Corener(
-        model_name_or_path=args.model_name_or_path,
+        backbone_model_name_or_path=args.model_name_or_path,
         ner_classes=train_dataset.data_parser.entity_type_count,
         # removing the None relation since we do binary classification for each relation to support
         # multiple relations per ner-pair.
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     # Model / Training
     parser.add_argument("--gpu", type=int, default=0, help="gpu device ID")
     parser.add_argument(
-        "--train-batch-size", type=int, default=2, help="Training batch size"
+        "--train-batch-size", type=int, default=40, help="Training batch size"
     )
     parser.add_argument("--n-epoch", type=int, default=20, help="Number of epochs")
     parser.add_argument(

@@ -12,7 +12,7 @@ def requirements(name):
 setup(
     name="corener",
     packages=find_packages(),
-    version="0.1.0",
+    version="0.0.1",
     description="Multi-task model for named-entity recognition, relation extraction, "
     "entity mention detection and coreference resolution",
     author="aiola",

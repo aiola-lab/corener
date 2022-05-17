@@ -6,10 +6,8 @@ from corener.data import MTLDataset
 from corener.models import Corener, ModelOutput
 from corener.utils.prediction import convert_model_output
 
-tokenizer = AutoTokenizer.from_pretrained(
-    "../artifacts/roberta-base-corener-ontonotes-60e"
-)  # aiola/roberta-base-corener
-model = Corener.from_pretrained("../artifacts/roberta-base-corener-ontonotes-60e")
+tokenizer = AutoTokenizer.from_pretrained("aiola/roberta-base-corener")
+model = Corener.from_pretrained("aiola/roberta-base-corener")
 model.eval()
 
 examples = [

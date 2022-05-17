@@ -5,7 +5,17 @@ CoReNer
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A multi-task model for named-entity recognition, relation extraction, entity mention detection and coreference resolution.
-Our model extends the [SpERT](https://github.com/lavis-nlp/spert) framework.  
+Our model extends the [SpERT](https://github.com/lavis-nlp/spert) framework to: (i) add two additional tasks, namely entity mention detection (EMD) and coreference resolution (CR), and (ii) support different pretrained backbones from the Huggingface model hub (e.g. `roberta-base`).
+
+We model NER as a span classification task, and relation extraction as a multi-label classification of (NER) span tuples. 
+Similarly, model EMD as a span classification task and CR as a binary classification of (EMD) span tuples.
+To construct the CR clusters, we keep the top antecedent of each mention, then compute the connected components of the mentions' undirected graph.
+
+## Model checkpoints
+
+We release a `roberta-base`-based `CoReNer` model, finetuned on the 4 tasks (NER, RE, EMD and CR) using the Ontonotes and CoNLL04 datasets.
+The model checkpoint is available at Huggingface's model hub: [roberta-base-corener](https://huggingface.co/aiola/roberta-base-corener).
+
 ## Installation
 
 ```bash
