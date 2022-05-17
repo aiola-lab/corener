@@ -14,7 +14,6 @@ from transformers.modeling_utils import (
     hf_bucket_url,
     is_remote_url,
     load_state_dict,
-    no_init_weights,
 )
 
 from corener.utils import set_logger

@@ -143,7 +143,8 @@ class Corener(nn.Module):
         self.load_state_dict(model_dict)
 
         logging.info(
-            f"Some weights of the model checkpoint at {path_or_model_name} were not used when initializing Corener: {unused_weights}"
+            f"Some weights of the model checkpoint at {path_or_model_name} "
+            f"were not used when initializing Corener: {unused_weights}"
         )
 
     @classmethod
@@ -152,8 +153,9 @@ class Corener(nn.Module):
 
         Parameters
         ----------
-        path_or_model_name : path to artifacts, or url model path
+        path_or_model_name : path to artifacts, or url model path.
         cache_dir :
+        kwargs : specify corener config, e.g. `ner_classes`.
 
         Returns
         -------
