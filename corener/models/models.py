@@ -167,11 +167,15 @@ class Corener(nn.Module):
 
         corener_config = config.corener_config
         # update corener config with kwargs
-        for k, v in kwargs:
+        for k, v in kwargs.items():
             if k in corener_config:
                 corener_config[k] = v
 
-        model = Corener(backbone_model_name_or_path_or_config=config, **corener_config)
+        model = Corener(
+            backbone_model_name_or_path_or_config=config,
+            cache_dir=cache_dir,
+            **corener_config,
+        )
 
         # load state dict
         model._load_state_dict(

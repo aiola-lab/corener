@@ -62,7 +62,7 @@ def load_pretrained_model(
 
     """
     tokenizer = AutoTokenizer.from_pretrained(artifact_path)
-    model = Corener.from_pretrained(artifact_path, map_location=device)
+    model = Corener.from_pretrained(artifact_path)
 
     if (
         max_context_size is not None
@@ -88,7 +88,7 @@ def load_pretrained_model(
         model = model.to(device)
 
     dataset = MTLDataset(
-        types=(Path(artifact_path) / "types.json").as_posix(),
+        types=model.config.types,
         tokenizer=tokenizer,
         train_mode=False,
     )

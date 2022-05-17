@@ -211,3 +211,8 @@ def load_weights_and_config(
 
     config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
     return state_dict, loaded_state_dict_keys, config
+
+
+def is_corener_path(path_or_model_name, cache_dir):
+    config = AutoConfig.from_pretrained(path_or_model_name, cache_dir=cache_dir)
+    return "corener_config" in config.__dict__

@@ -27,9 +27,9 @@ def load_pretrained_model(
 
     """
     tokenizer = AutoTokenizer.from_pretrained(artifact_path)
-    model = Corener.from_pretrained(artifact_path, map_location=device)
+    model = Corener.from_pretrained(artifact_path)
     dataset = MTLDataset(
-        types=(Path(artifact_path) / "types.json").as_posix(),
+        types=model.config.types,
         tokenizer=tokenizer,
         train_mode=False,
     )
@@ -71,7 +71,7 @@ def evaluate(
         is_ner_rel=False,
     )
 
-    for batch in tqdm(dataloader):
+    for batch in tqdm(dataloader, desc="evaluation"):
         batch = batch.to(device)
 
         output: ModelOutput = model(

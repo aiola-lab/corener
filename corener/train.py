@@ -6,13 +6,14 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from transformers import AdamW, AutoTokenizer, get_linear_schedule_with_warmup
+from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 
 from corener.data import MTLDataset, sampling
 from corener.evaluate import evaluate
 from corener.models import Corener, ModelOutput
 from corener.utils import common_parser, get_device, get_optimizer_params, set_seed
 from corener.utils.loss import compute_loss
+from corener.utils.model import is_corener_path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -65,8 +66,8 @@ def main(args):
         )
 
     # model
-    model = Corener(
-        backbone_model_name_or_path=args.model_name_or_path,
+    # check if this is a Corener model.
+    model_kwargs = dict(
         ner_classes=train_dataset.data_parser.entity_type_count,
         # removing the None relation since we do binary classification for each relation to support
         # multiple relations per ner-pair.
@@ -75,20 +76,34 @@ def main(args):
         pad_token=tokenizer.pad_token_id,
         size_embedding=args.size_embedding,
         max_pairs=args.max_pairs,
-        cache_dir=args.cache_path,
     )
+    if is_corener_path(
+        path_or_model_name=args.model_name_or_path, cache_dir=args.cache_path
+    ):
+        # this is a Corener model, so we use Corener.from_pretrained
+        model = Corener.from_pretrained(
+            path_or_model_name=args.model_name_or_path,
+            cache_dir=args.cache_path,
+            **model_kwargs,
+        )
+    else:
+        # loading backbone only
+        model = Corener(
+            backbone_model_name_or_path_or_config=args.model_name_or_path,
+            cache_dir=args.cache_path,
+            **model_kwargs,
+        )
+
     # multi-gpu
-    # todo: remove data parallel? (since it breaks eval with bs > 1)
     model = nn.DataParallel(model)
     model = model.to(device)
 
     # create optimizer
     optimizer_params = get_optimizer_params(model, weight_decay=args.weight_decay)
-    optimizer = AdamW(
+    optimizer = torch.optim.AdamW(
         optimizer_params,
         lr=args.lr,
         weight_decay=args.weight_decay,
-        correct_bias=False,
     )
     # create scheduler
     updates_total = len(train_loader) * args.n_epoch
