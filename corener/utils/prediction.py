@@ -384,6 +384,13 @@ def parse_predictions(
                     end_token = curr_token_to_idx[e["end"] - 1]
                     e.update(dict(start_char=start_token[0], end_char=end_token[1]))
 
+            # clusters
+            for cluster in clusters:
+                for m in cluster:
+                    start_token = curr_token_to_idx[m["start"]]
+                    end_token = curr_token_to_idx[m["end"] - 1]
+                    m.update(dict(start_char=start_token[0], end_char=end_token[1]))
+
         doc_predictions = dict(
             tokens=[t.phrase for t in tokens],
             entities=extended_converted_entities,

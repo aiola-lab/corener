@@ -23,7 +23,7 @@ def main(args):
     device = get_device(gpus=args.gpu)
 
     tokenizer = AutoTokenizer.from_pretrained(
-        args.model_name_or_path, do_lower_case=args.lowercase, cache_dir=args.cache_path
+        args.model_name_or_path, do_lower_case=args.lowercase, cache_dir=args.cache_dir
     )
 
     # load data
@@ -66,7 +66,6 @@ def main(args):
         )
 
     # model
-    # check if this is a Corener model.
     model_kwargs = dict(
         ner_classes=train_dataset.data_parser.entity_type_count,
         # removing the None relation since we do binary classification for each relation to support
@@ -77,20 +76,21 @@ def main(args):
         size_embedding=args.size_embedding,
         max_pairs=args.max_pairs,
     )
+    # check if this is a Corener model.
     if is_corener_path(
-        path_or_model_name=args.model_name_or_path, cache_dir=args.cache_path
+        path_or_model_name=args.model_name_or_path, cache_dir=args.cache_dir
     ):
         # this is a Corener model, so we use Corener.from_pretrained
         model = Corener.from_pretrained(
             path_or_model_name=args.model_name_or_path,
-            cache_dir=args.cache_path,
+            cache_dir=args.cache_dir,
             **model_kwargs,
         )
     else:
         # loading backbone only
         model = Corener(
             backbone_model_name_or_path_or_config=args.model_name_or_path,
-            cache_dir=args.cache_path,
+            cache_dir=args.cache_dir,
             **model_kwargs,
         )
 
@@ -162,7 +162,7 @@ def main(args):
                     is_cr=batch.is_cr,
                 )
 
-                loss = torch.stack(losses).mean()
+                loss = torch.stack(losses).sum()
                 loss.backward()
 
                 nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     # Misc
     parser.add_argument("--seed", type=int, default=42, help="Seed")
     parser.add_argument(
-        "--cache-path",
+        "--cache-dir",
         type=str,
         default=None,
         help="Path to cache transformer models (HuggingFace)",
