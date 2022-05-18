@@ -14,7 +14,7 @@ To construct the CR clusters, we keep the top antecedent of each mention, then c
 ## Model checkpoints
 
 We release a `roberta-base`-based `CoReNer` model, finetuned on the 4 tasks (NER, RE, EMD and CR) using the Ontonotes and CoNLL04 datasets.
-The model checkpoint is available at Huggingface's model hub: [roberta-base-corener](https://huggingface.co/aiola/roberta-base-corener).
+The model checkpoint is available at Huggingface's model hub: [aiola/roberta-base-corener](https://huggingface.co/aiola/roberta-base-corener).
 
 ## Installation
 
@@ -74,9 +74,6 @@ Training CLI example:
 python train.py --train-path path/to/train.json \
   --val-path path/to/val.json \
   --types-path path/to/types.json \
-  --n-epoch 30 \
-  --train-batch-size 16 \
-  --lr 5e-5 \
   --model-name-or-path roberta-base \
   --artifact-path path/to/artifacts \
   --do-eval

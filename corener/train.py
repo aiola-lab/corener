@@ -198,10 +198,10 @@ def main(args):
     tokenizer.save_pretrained(args.artifact_path)
     # save training args
     with open(out_path / "training_args.json", "w") as f:
-        json.dump(args.__dict__, f)
+        json.dump(args.__dict__, f, indent=2)
     # save entity types
     with open(out_path / "types.json", "w") as f:
-        json.dump(train_dataset.data_parser.types, f)
+        json.dump(train_dataset.data_parser.types, f, indent=2)
 
 
 if __name__ == "__main__":
