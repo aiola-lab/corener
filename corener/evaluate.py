@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import torch
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
@@ -13,23 +11,12 @@ from corener.utils.evaluation import EntityRelEvaluator
 
 def load_pretrained_model(
     artifact_path: str,
-    device=None,
+    cache_dir=None,
 ):
-    """
-
-    Parameters
-    ----------
-    artifact_path :
-    device :
-
-    Returns
-    -------
-
-    """
-    tokenizer = AutoTokenizer.from_pretrained(artifact_path)
-    model = Corener.from_pretrained(artifact_path, map_location=device)
+    tokenizer = AutoTokenizer.from_pretrained(artifact_path, cache_dir=cache_dir)
+    model = Corener.from_pretrained(artifact_path, cache_dir=cache_dir)
     dataset = MTLDataset(
-        types_path=(Path(artifact_path) / "types.json").as_posix(),
+        types=model.config.types,
         tokenizer=tokenizer,
         train_mode=False,
     )
@@ -38,7 +25,14 @@ def load_pretrained_model(
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, device):
+def evaluate(
+    model,
+    dataloader,
+    device,
+    rel_filter_threshold,
+    ref_filter_threshold,
+    no_overlapping=False,
+):
     # NOTE: workaround to insure examples are not shuffled
     assert isinstance(
         dataloader.sampler, torch.utils.data.sampler.SequentialSampler
@@ -48,8 +42,8 @@ def evaluate(model, dataloader, device):
 
     ner_rel_evaluator = EntityRelEvaluator(
         dataloader.dataset,
-        rel_filter_threshold=args.rel_filter_threshold,
-        no_overlapping=args.no_overlapping,
+        rel_filter_threshold=rel_filter_threshold,
+        no_overlapping=no_overlapping,
         relations_name="relations",
         spans_name="entities",
         is_ner_rel=True,
@@ -57,14 +51,14 @@ def evaluate(model, dataloader, device):
 
     emd_cr_evaluator = EntityRelEvaluator(
         dataloader.dataset,
-        rel_filter_threshold=args.ref_filter_threshold,
-        no_overlapping=args.no_overlapping,
+        rel_filter_threshold=ref_filter_threshold,
+        no_overlapping=no_overlapping,
         relations_name="references",
         spans_name="mentions",
         is_ner_rel=False,
     )
 
-    for batch in tqdm(dataloader):
+    for batch in tqdm(dataloader, desc="evaluation"):
         batch = batch.to(device)
 
         output: ModelOutput = model(
@@ -92,7 +86,9 @@ def evaluate(model, dataloader, device):
 
 def main(args):
     device = get_device(gpus=args.gpu)
-    model, dataset, tokenizer = load_pretrained_model(args.artifact_path, device=device)
+    model, dataset, tokenizer = load_pretrained_model(
+        args.artifact_path, cache_dir=args.cache_dir
+    )
     dataset.read_dataset(args.data_path)
 
     dataloader = DataLoader(
@@ -105,7 +101,12 @@ def main(args):
         ),
     )
     ner_eval, rel_eval, rel_nec_eval, emd_eval, ref_eval, ref_emd_eval = evaluate(
-        model=model, dataloader=dataloader, device=device
+        model=model,
+        dataloader=dataloader,
+        device=device,
+        rel_filter_threshold=args.rel_filter_threshold,
+        ref_filter_threshold=args.ref_filter_threshold,
+        no_overlapping=args.no_overlapping,
     )
 
 
@@ -136,6 +137,12 @@ if __name__ == "__main__":
         "--artifact-path",
         type=str,
         help="Path to cached model/tokenizer etc.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        default=None,
+        type=str,
+        help="cache dir.",
     )
     parser.add_argument("--gpu", type=int, default=0, help="gpu device ID")
     parser.add_argument(

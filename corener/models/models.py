@@ -1,20 +1,24 @@
-import json
+import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 from torch import nn
-from transformers import AutoConfig, AutoModel, logging
+from transformers import AutoModel, PretrainedConfig
 from transformers.file_utils import ModelOutput as HFModelOutput
 
 from corener.data.sampling import create_rel_mask
+from corener.utils import set_logger
 from corener.utils.data import batch_index, get_token, padded_stack
+from corener.utils.model import load_weights_and_config
+
+set_logger()
 
 
 class Corener(nn.Module):
     def __init__(
         self,
-        model_name_or_path: str,
+        backbone_model_name_or_path_or_config: Union[str, PretrainedConfig],
         ner_classes: int,
         relation_classes: int,
         cls_token: int,
@@ -32,9 +36,16 @@ class Corener(nn.Module):
         self.relation_classes = relation_classes
         self.size_embeddings_dim = size_embedding
 
-        self.backbone = AutoModel.from_pretrained(
-            model_name_or_path, cache_dir=cache_dir, add_pooling_layer=False
-        )
+        if isinstance(backbone_model_name_or_path_or_config, PretrainedConfig):
+            backbone_model_name_or_path_or_config.add_pooling_layer = False
+            self.backbone = AutoModel.from_config(backbone_model_name_or_path_or_config)
+        else:
+            self.backbone = AutoModel.from_pretrained(
+                backbone_model_name_or_path_or_config,
+                cache_dir=cache_dir,
+                add_pooling_layer=False
+            )
+
         # update config
         corener_config = dict(
             ner_classes=self.ner_classes,
@@ -45,6 +56,7 @@ class Corener(nn.Module):
             max_pairs=self._max_pairs,
         )
         self.backbone.config.update(dict(corener_config=corener_config))
+        self.config = self.backbone.config
 
         self.dropout = nn.Dropout(self.backbone.config.hidden_dropout_prob)
 
@@ -112,44 +124,71 @@ class Corener(nn.Module):
     def save_pretrained(self, path, **kwargs):
         path = Path(path)
         path.mkdir(exist_ok=True, parents=True)
-        torch.save(self.state_dict(), path / "pytorch_model.bin", **kwargs)
-        self.backbone.config.save_pretrained(path)
+        torch.save(self.state_dict(), path / "pytorch_model.bin")
+        self.config.update(kwargs)
+        self.config.save_pretrained(path)
+
+    def _load_state_dict(self, state_dict, path_or_model_name):
+        model_dict = self.state_dict()
+        # filter out unnecessary keys
+        used_keys = [
+            k
+            for k, v in state_dict.items()
+            if k in model_dict and v.data.shape == model_dict[k].data.shape
+        ]
+        unused_weights = [k for k in state_dict.keys() if k not in used_keys]
+        pretrained_dict = {k: v for k, v in state_dict.items() if k in used_keys}
+        # overwrite entries in the existing state dict
+        model_dict.update(pretrained_dict)
+        # load the new state dict
+        self.load_state_dict(model_dict)
+        if len(unused_weights) > 0:
+            logging.info(
+                f"Some weights of the model checkpoint at {path_or_model_name} "
+                f"were not used when initializing Corener: {unused_weights}"
+            )
 
     @classmethod
-    def from_pretrained(cls, path, map_location=None):
+    def from_pretrained(cls, path_or_model_name, cache_dir=None, **kwargs):
         """
 
         Parameters
         ----------
-        path : path to artifacts folder
-        map_location :
+        path_or_model_name : path to artifacts, or url model path.
+        cache_dir :
+        kwargs : specify corener config, e.g. `ner_classes`.
 
         Returns
         -------
 
         """
-        path = Path(path)
-        with open(path / "config.json", "r") as config_file:
-            config = json.load(config_file)
-            corener_config = config["corener_config"]
+        pretrained_dict, loaded_state_dict_keys, config = load_weights_and_config(
+            pretrained_model_name_or_path=path_or_model_name, cache_dir=cache_dir
+        )
 
-        logging.set_verbosity_error()
-        # supress warning: Some weights of the model checkpoint...
+        corener_config = config.corener_config
+        # update corener config with kwargs
+        for k, v in kwargs.items():
+            if k in corener_config:
+                corener_config[k] = v
+
         model = Corener(
-            model_name_or_path=path.as_posix(),
-            ner_classes=corener_config["ner_classes"],
-            relation_classes=corener_config["relation_classes"],
-            cls_token=corener_config["cls_token"],
-            pad_token=corener_config["pad_token"],
-            size_embedding=corener_config["size_embedding"],
-            max_pairs=corener_config["max_pairs"],
+            backbone_model_name_or_path_or_config=config,
+            cache_dir=cache_dir,
+            **corener_config,
         )
-        # go back to warning level...
-        logging.set_verbosity_warning()
 
-        model.load_state_dict(
-            torch.load(path / "pytorch_model.bin", map_location=map_location)
+        # load state dict
+        model._load_state_dict(
+            state_dict=pretrained_dict, path_or_model_name=path_or_model_name
         )
+
+        # make sure token embedding weights are still tied if needed
+        model.backbone.tie_weights()
+
+        # Set model in evaluation mode to deactivate DropOut modules by default
+        model.eval()
+
         return model
 
     def _classify_spans(

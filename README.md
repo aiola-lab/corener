@@ -5,13 +5,66 @@ CoReNer
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A multi-task model for named-entity recognition, relation extraction, entity mention detection and coreference resolution.
+Our model extends the [SpERT](https://github.com/lavis-nlp/spert) framework to: (i) add two additional tasks, namely entity mention detection (EMD) and coreference resolution (CR), and (ii) support different pretrained backbones from the Huggingface model hub (e.g. `roberta-base`).
+
+We model NER as a span classification task, and relation extraction as a multi-label classification of (NER) span tuples. 
+Similarly, model EMD as a span classification task and CR as a binary classification of (EMD) span tuples.
+To construct the CR clusters, we keep the top antecedent of each mention, then compute the connected components of the mentions' undirected graph.
+
+## Model checkpoints
+
+We release a `roberta-base`-based `CoReNer` model, finetuned on the 4 tasks (NER, RE, EMD and CR) using the Ontonotes and CoNLL04 datasets.
+The model checkpoint is available at Huggingface's model hub: [aiola/roberta-base-corener](https://huggingface.co/aiola/roberta-base-corener).
 
 ## Installation
 
 ```bash
 cd corener-mtl
 pip install -e .
+# also install spacy en model
+python -m spacy download en_core_web_sm
 ```
+
+## Usage
+
+```python
+import json
+
+from transformers import AutoTokenizer
+from corener.models import Corener, ModelOutput
+from corener.data import MTLDataset
+from corener.utils.prediction import convert_model_output
+
+
+tokenizer = AutoTokenizer.from_pretrained("aiola/roberta-base-corener")
+model = Corener.from_pretrained("aiola/roberta-base-corener")
+model.eval()
+
+examples = [
+    "Steve Jobs was a charismatic pioneer of the personal computer era. With Steve Wozniak, Jobs founded Apple Inc. in 1976 and transformed the company into a world leader in telecommunications. Widely considered a visionary and a genius, he oversaw the launch of such revolutionary products as the iPod and the iPhone."
+]
+
+dataset = MTLDataset(
+    types=model.config.types, 
+    tokenizer=tokenizer,
+    train_mode=False,
+)
+dataset.read_dataset(examples)
+example = dataset.get_example(0)  # get first example
+
+output: ModelOutput = model(
+    input_ids=example.encodings,
+    context_masks=example.context_masks,
+    entity_masks=example.entity_masks,
+    entity_sizes=example.entity_sizes,
+    entity_spans=example.entity_spans,
+    entity_sample_masks=example.entity_sample_masks,
+    inference=True,
+)
+
+print(json.dumps(convert_model_output(output=output, batch=example, dataset=dataset), indent=2))
+```
+
 
 ## Training
 
@@ -21,9 +74,6 @@ Training CLI example:
 python train.py --train-path path/to/train.json \
   --val-path path/to/val.json \
   --types-path path/to/types.json \
-  --n-epoch 30 \
-  --train-batch-size 16 \
-  --lr 5e-5 \
   --model-name-or-path roberta-base \
   --artifact-path path/to/artifacts \
   --do-eval

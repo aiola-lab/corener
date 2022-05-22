@@ -6,13 +6,14 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
-from transformers import AdamW, AutoTokenizer, get_linear_schedule_with_warmup
+from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 
 from corener.data import MTLDataset, sampling
 from corener.evaluate import evaluate
 from corener.models import Corener, ModelOutput
 from corener.utils import common_parser, get_device, get_optimizer_params, set_seed
 from corener.utils.loss import compute_loss
+from corener.utils.model import is_corener_path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -22,13 +23,13 @@ def main(args):
     device = get_device(gpus=args.gpu)
 
     tokenizer = AutoTokenizer.from_pretrained(
-        args.model_name_or_path, do_lower_case=args.lowercase, cache_dir=args.cache_path
+        args.model_name_or_path, do_lower_case=args.lowercase, cache_dir=args.cache_dir
     )
 
     # load data
     train_dataset = MTLDataset(
         dataset_or_path=args.train_path,
-        types_path=args.types_path,
+        types=args.types_path,
         tokenizer=tokenizer,
         train_mode=True,
     )
@@ -48,7 +49,7 @@ def main(args):
     if args.val_path is not None and args.do_eval:
         val_dataset = MTLDataset(
             dataset_or_path=args.val_path,
-            types_path=args.types_path,
+            types=args.types_path,
             tokenizer=tokenizer,
             train_mode=False,  # eval mode
         )
@@ -65,8 +66,7 @@ def main(args):
         )
 
     # model
-    model = Corener(
-        model_name_or_path=args.model_name_or_path,
+    model_kwargs = dict(
         ner_classes=train_dataset.data_parser.entity_type_count,
         # removing the None relation since we do binary classification for each relation to support
         # multiple relations per ner-pair.
@@ -75,20 +75,35 @@ def main(args):
         pad_token=tokenizer.pad_token_id,
         size_embedding=args.size_embedding,
         max_pairs=args.max_pairs,
-        cache_dir=args.cache_path,
     )
+    # check if this is a Corener model.
+    if is_corener_path(
+        path_or_model_name=args.model_name_or_path, cache_dir=args.cache_dir
+    ):
+        # this is a Corener model, so we use Corener.from_pretrained
+        model = Corener.from_pretrained(
+            path_or_model_name=args.model_name_or_path,
+            cache_dir=args.cache_dir,
+            **model_kwargs,
+        )
+    else:
+        # loading backbone only
+        model = Corener(
+            backbone_model_name_or_path_or_config=args.model_name_or_path,
+            cache_dir=args.cache_dir,
+            **model_kwargs,
+        )
+
     # multi-gpu
-    # todo: remove data parallel? (since it breaks eval with bs > 1)
     model = nn.DataParallel(model)
     model = model.to(device)
 
     # create optimizer
     optimizer_params = get_optimizer_params(model, weight_decay=args.weight_decay)
-    optimizer = AdamW(
+    optimizer = torch.optim.AdamW(
         optimizer_params,
         lr=args.lr,
         weight_decay=args.weight_decay,
-        correct_bias=False,
     )
     # create scheduler
     updates_total = len(train_loader) * args.n_epoch
@@ -147,7 +162,7 @@ def main(args):
                     is_cr=batch.is_cr,
                 )
 
-                loss = torch.stack(losses).mean()
+                loss = torch.stack(losses).sum()
                 loss.backward()
 
                 nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
@@ -163,21 +178,30 @@ def main(args):
                 and val_loader is not None
                 and (epoch + 1) % args.eval_every == 0
             ):
-                _ = evaluate(model, dataloader=val_loader, device=device)
+                _ = evaluate(
+                    model,
+                    dataloader=val_loader,
+                    device=device,
+                    rel_filter_threshold=args.rel_filter_threshold,
+                    ref_filter_threshold=args.ref_filter_threshold,
+                    no_overlapping=args.no_overlapping,
+                )
 
         if args.milestones is not None:
             step_scheduler.step()
 
     out_path = Path(args.artifact_path)
     # save model
-    model.module.save_pretrained(args.artifact_path)
+    model.module.save_pretrained(
+        args.artifact_path, types=train_dataset.data_parser.types
+    )
     tokenizer.save_pretrained(args.artifact_path)
     # save training args
     with open(out_path / "training_args.json", "w") as f:
-        json.dump(args.__dict__, f)
+        json.dump(args.__dict__, f, indent=2)
     # save entity types
     with open(out_path / "types.json", "w") as f:
-        json.dump(train_dataset.data_parser.types, f)
+        json.dump(train_dataset.data_parser.types, f, indent=2)
 
 
 if __name__ == "__main__":
@@ -255,7 +279,7 @@ if __name__ == "__main__":
     # Model / Training
     parser.add_argument("--gpu", type=int, default=0, help="gpu device ID")
     parser.add_argument(
-        "--train-batch-size", type=int, default=2, help="Training batch size"
+        "--train-batch-size", type=int, default=40, help="Training batch size"
     )
     parser.add_argument("--n-epoch", type=int, default=20, help="Number of epochs")
     parser.add_argument(
@@ -270,7 +294,7 @@ if __name__ == "__main__":
         default=100,
         help="Number of negative relation samples per document (sentence)",
     )
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=7.5e-5, help="Learning rate")
     parser.add_argument(
         "--lr-warmup",
         type=float,
@@ -315,7 +339,7 @@ if __name__ == "__main__":
     # Misc
     parser.add_argument("--seed", type=int, default=42, help="Seed")
     parser.add_argument(
-        "--cache-path",
+        "--cache-dir",
         type=str,
         default=None,
         help="Path to cache transformer models (HuggingFace)",

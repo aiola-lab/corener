@@ -1,10 +1,49 @@
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
 
 import torch
 
 from corener.data.dataset import DataParser
+from corener.models import ModelOutput
 from corener.utils.clusters import convert_to_clusters
-from corener.utils.data import EvalBatch, get_span_tokens
+from corener.utils.data import EvalBatch, TrainBatch, get_span_tokens
+
+
+def convert_model_output(
+    output: ModelOutput,
+    batch: Union[EvalBatch, TrainBatch],
+    dataset,
+    rel_filter_threshold=0.4,
+    ref_filter_threshold=0.5,
+    token_to_idx=None,
+):
+    # convert entities relation predictions
+    batch_pred_entities, batch_pred_relations = convert_predictions(
+        output.entity_clf,
+        output.rel_clf,
+        output.relations,
+        batch,
+        rel_filter_threshold,
+        dataset.data_parser,
+        is_ner_rel=True,
+    )
+    batch_pred_mentions, batch_pred_references = convert_predictions(
+        output.mention_clf,
+        output.references_clf,
+        output.references,
+        batch,
+        ref_filter_threshold,
+        dataset.data_parser,
+        is_ner_rel=False,
+    )
+
+    return parse_predictions(
+        documents=dataset.documents,
+        pred_entities=batch_pred_entities,
+        pred_relations=batch_pred_relations,
+        pred_mentions=batch_pred_mentions,
+        pred_references=batch_pred_references,
+        token_to_idx=token_to_idx,
+    )
 
 
 def convert_predictions(
@@ -344,6 +383,13 @@ def parse_predictions(
                     start_token = curr_token_to_idx[e["start"]]
                     end_token = curr_token_to_idx[e["end"] - 1]
                     e.update(dict(start_char=start_token[0], end_char=end_token[1]))
+
+            # clusters
+            for cluster in clusters:
+                for m in cluster:
+                    start_token = curr_token_to_idx[m["start"]]
+                    end_token = curr_token_to_idx[m["end"] - 1]
+                    m.update(dict(start_char=start_token[0], end_char=end_token[1]))
 
         doc_predictions = dict(
             tokens=[t.phrase for t in tokens],

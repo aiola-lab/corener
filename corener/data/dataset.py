@@ -28,7 +28,7 @@ class DataParser:
 
     def __init__(
         self,
-        types_path: str,
+        types: Union[str, dict],
         tokenizer: transformers.PreTrainedTokenizerBase,
         spacy_model="en_core_web_sm",
     ):
@@ -36,7 +36,7 @@ class DataParser:
 
         Parameters
         ----------
-        types_path : path to json file containing all relations and entities types.
+        types : path to json file containing all relations and entities types, or dict with types.
         tokenizer : transformers.PreTrainedTokenizerBase
         spacy_model :
 
@@ -52,8 +52,23 @@ class DataParser:
         self._idx2reference_type = OrderedDict()
 
         # getting types of entities and relations
-        with open(types_path, "r") as f:
-            self.types = json.load(f, object_pairs_hook=OrderedDict)
+        if isinstance(types, str):
+            with open(types, "r") as f:
+                self.types = json.load(f)
+                self.types = OrderedDict(
+                    {
+                        k: OrderedDict(sorted(v.items(), key=lambda x: x[0]))
+                        for k, v in self.types.items()
+                    }
+                )
+                self._parse_types(self.types)
+        else:
+            self.types = OrderedDict(
+                {
+                    k: OrderedDict(sorted(v.items(), key=lambda x: x[0]))
+                    for k, v in types.items()
+                }
+            )
             self._parse_types(self.types)
 
         self._tokenizer = tokenizer
@@ -444,7 +459,7 @@ class DataParser:
 class MTLDataset(Dataset):
     def __init__(
         self,
-        types_path: str,
+        types: Union[str, dict],
         tokenizer: transformers.PreTrainedTokenizerBase,
         dataset_or_path: Union[List[str], List[List[str]], str] = None,
         neg_entity_count: int = 100,
@@ -457,7 +472,7 @@ class MTLDataset(Dataset):
 
         Parameters
         ----------
-        types_path : path to json file containing all relations/references and entities/mentions types.
+        types : path to json file containing all relations/references and entities/mentions types, or dict with types.
         tokenizer : transformers.PreTrainedTokenizerBase
         dataset_or_path : List of examples, list of list of tokens, or path to json file
         neg_entity_count : number of negative entities/mentions
@@ -467,7 +482,7 @@ class MTLDataset(Dataset):
         """
 
         self.data_parser = DataParser(
-            types_path=types_path,
+            types=types,
             tokenizer=tokenizer,
             spacy_model=spacy_model,
         )
@@ -504,6 +519,10 @@ class MTLDataset(Dataset):
 
     def __len__(self):
         return len(self._documents)
+
+    def get_example(self, index: int):
+        batch = self.__getitem__(index=index)
+        return batch.__class__(*[t.unsqueeze(0) for t in batch])  # to batch-size of one
 
     def __getitem__(self, index: int):
         doc = self._documents[index]
