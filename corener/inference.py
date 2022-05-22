@@ -39,7 +39,13 @@ def text_to_tokens(documents: List[str], nlp):
     docs = [nlp(doc) for doc in documents]
     parsed_docs = [[t.text for t in doc] for doc in docs]
     token_to_idx = [
-        {token.i: (token.idx, token.idx + len(token.text), token.text) for token in doc}
+        {
+            "text": doc.text,
+            **{
+                token.i: (token.idx, token.idx + len(token.text), token.text)
+                for token in doc
+            },
+        }
         for doc in docs
     ]
     return parsed_docs, token_to_idx

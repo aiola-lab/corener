@@ -43,7 +43,7 @@ class Corener(nn.Module):
             self.backbone = AutoModel.from_pretrained(
                 backbone_model_name_or_path_or_config,
                 cache_dir=cache_dir,
-                add_pooling_layer=False
+                add_pooling_layer=False,
             )
 
         # update config

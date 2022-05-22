@@ -391,14 +391,21 @@ def parse_predictions(
                     end_token = curr_token_to_idx[m["end"] - 1]
                     m.update(dict(start_char=start_token[0], end_char=end_token[1]))
 
-        doc_predictions = dict(
-            tokens=[t.phrase for t in tokens],
-            entities=extended_converted_entities,
-            relations=converted_relations,
-            mentions=extended_converted_mentions,
-            references=converted_references,
-            clusters=clusters,
+        doc_predictions = dict()
+        if token_to_idx is not None:
+            doc_predictions.update(dict(text=token_to_idx[i]["text"]))
+
+        doc_predictions.update(
+            dict(
+                tokens=[t.phrase for t in tokens],
+                entities=extended_converted_entities,
+                relations=converted_relations,
+                mentions=extended_converted_mentions,
+                references=converted_references,
+                clusters=clusters,
+            )
         )
+
         predictions.append(doc_predictions)
 
     return predictions
