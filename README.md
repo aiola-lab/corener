@@ -44,7 +44,7 @@ model = Corener.from_pretrained("aiola/roberta-base-corener")
 model.eval()
 
 examples = [
-    "Steve Jobs was a charismatic pioneer of the personal computer era. With Steve Wozniak, Jobs founded Apple Inc. in 1976 and transformed the company into a world leader in telecommunications. Widely considered a visionary and a genius, he oversaw the launch of such revolutionary products as the iPod and the iPhone."
+    "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
 ]
 
 dataset = MTLDataset(
@@ -89,7 +89,7 @@ Inference example and output.
 ```bash
 python inference.py 
   --artifact-path path/to/artifacts \ 
-  --input "Steve Jobs was a charismatic pioneer of the personal computer era. With Steve Wozniak, Jobs founded Apple Inc. in 1976 and transformed the company into a world leader in telecommunications. Widely considered a visionary and a genius, he oversaw the launch of such revolutionary products as the iPod and the iPhone."
+  --input "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
 ```
 
 Output:
@@ -98,103 +98,85 @@ Output:
 [
   {
     "tokens": [
-      "Steve",
-      "Jobs",
-      "was",
-      "a",
+      "In",
+      "2009",
+      ",",
       ...
     ],
     "entities": [
       {
-        "type": "PERSON",
-        "start": 0,
+        "type": "DATE",
+        "start": 1,
         "end": 2,
         "span": [
-          "Steve",
-          "Jobs"
+          "2009"
         ],
-        "score": 0.9999884366989136,
-        "start_char": 0,
-        "end_char": 10
+        "score": 0.9997476935386658
       },
       ...
     ],
     "relations": [
       {
-        "type": "Work_For",
-        "head": 0,
-        "tail": 3,
+        "type": "OrgBased_In",
+        "head": 1,
+        "tail": 4,
         "head_span": [
-          "Steve",
-          "Jobs"
+          "ABC"
         ],
         "tail_span": [
-          "Apple",
-          "Inc."
+          "China"
         ],
-        "score": 0.9500910043716431
+        "score": 0.9945483803749084
       }
     ],
     "mentions": [
       {
         "type": "MENTION",
-        "start": 0,
-        "end": 2,
+        "start": 3,
+        "end": 4,
         "span": [
-          "Steve",
-          "Jobs"
+          "ABC"
         ],
-        "score": 0.9999381303787231,
-        "start_char": 0,
-        "end_char": 10
+        "score": 0.9999425411224365
       },
       ...
     ],
     "references": [
       {
         "type": "COREF",
-        "head": 2,
+        "head": 1,
         "tail": 0,
         "head_span": [
-          "Jobs"
+          "its"
         ],
         "tail_span": [
-          "Steve",
-          "Jobs"
+          "ABC"
         ],
-        "score": 0.9999998807907104
+        "score": 1.0
       },
       ...
     ],
     "clusters": [
       [
         {
+          "start": 11,
+          "end": 13,
+          "span": [
+            "The",
+            "company"
+          ],
+          "cluster_id": 0
+        },
+        {
           "start": 16,
           "end": 17,
           "span": [
-            "Jobs"
+            "its"
           ],
           "cluster_id": 0
         },
-        {
-          "start": 41,
-          "end": 42,
-          "span": [
-            "he"
-          ],
-          "cluster_id": 0
-        },
-        {
-          "start": 0,
-          "end": 2,
-          "span": [
-            "Steve",
-            "Jobs"
-          ],
-          "cluster_id": 0
-        }
-      ],
-      ...
+        ...
+      ]
     ]
   }
 ]

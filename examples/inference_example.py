@@ -11,9 +11,7 @@ model = Corener.from_pretrained("aiola/roberta-base-corener")
 model.eval()
 
 examples = [
-    "Steve Jobs was a charismatic pioneer of the personal computer era. With Steve Wozniak, Jobs founded Apple Inc. "
-    "in 1976 and transformed the company into a world leader in telecommunications. Widely considered a visionary and a"
-    " genius, he oversaw the launch of such revolutionary products as the iPod and the iPhone.",
+    "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
 ]
 
 dataset = MTLDataset(
