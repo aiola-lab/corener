@@ -13,8 +13,11 @@ To construct the CR clusters, we keep the top antecedent of each mention, then c
 
 ## Model checkpoints
 
-We release a `roberta-base`-based `CoReNer` model, finetuned on the 4 tasks (NER, RE, EMD and CR) using the Ontonotes and CoNLL04 datasets.
-The model checkpoint is available at Huggingface's model hub: [aiola/roberta-base-corener](https://huggingface.co/aiola/roberta-base-corener).
+We release RoBERTa-based CoReNer models, finetuned on the 4 tasks (NER, RE, EMD and CR) using the Ontonotes and CoNLL04 datasets.
+The model checkpoint are available at Huggingface's model hub: 
+- [aiola/roberta-base-corener](https://huggingface.co/aiola/roberta-base-corener).
+- [aiola/roberta-large-corener](https://huggingface.co/aiola/roberta-large-corener).
+
 
 ## Installation
 

@@ -74,7 +74,7 @@ class DataParser:
         self._tokenizer = tokenizer
         self._vocabulary_size = tokenizer.vocab_size
 
-        self._nlp = spacy.load(spacy_model)
+        self.spacy_nlp = spacy.load(spacy_model)
 
         self.documents = OrderedDict()
         self.entities = OrderedDict()
@@ -340,7 +340,7 @@ class DataParser:
             else:
                 # not split into words
                 for doc in documents:
-                    doc_tokens = [t.text for t in self._nlp(doc)]
+                    doc_tokens = [t.text for t in self.spacy_nlp(doc)]
                     doc_tokens, doc_encoding = self._parse_tokens(doc_tokens)
                     _ = self._create_document(
                         doc_tokens, [], [], [], [], doc_encoding, 1, 1, 1, 1, None

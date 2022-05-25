@@ -108,7 +108,7 @@ def run_inference(
     data = args.input
     if not isinstance(data, list):
         data = [data]
-    data, token_to_idx = text_to_tokens(data, dataset.data_parser._nlp)
+    data, token_to_idx = text_to_tokens(data, dataset.data_parser.spacy_nlp)
 
     dataset.read_dataset(data)
     max_doc_contexts = max([len(doc.encoding) for doc in dataset.documents])
