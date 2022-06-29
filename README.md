@@ -22,7 +22,9 @@ The model checkpoint are available at Huggingface's model hub:
 ## Installation
 
 ```bash
-cd corener-mtl
+git clone https://github.com/aiola-lab/corener.git
+cd corener
+pip install --upgrade pip
 pip install -e .
 # also install spacy en model
 python -m spacy download en_core_web_sm

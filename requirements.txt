@@ -6,5 +6,4 @@ spacy
 ujson
 networkx
 pandas
-cvxpy
 scipy
