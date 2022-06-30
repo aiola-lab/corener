@@ -6,20 +6,19 @@ from corener.data import MTLDataset
 from corener.models import Corener, ModelOutput
 from corener.utils.prediction import convert_model_output
 
-tokenizer = AutoTokenizer.from_pretrained("aiola/roberta-base-corener")
-model = Corener.from_pretrained("aiola/roberta-base-corener")
+model_name = "aiola/roberta-base-corener"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = Corener.from_pretrained(model_name)
 model.eval()
 
-examples = [
-    "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
-]
+input_text = "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
 
 dataset = MTLDataset(
     types=model.config.types,
     tokenizer=tokenizer,
     train_mode=False,
 )
-dataset.read_dataset(examples)
+dataset.read_dataset([input_text])
 example = dataset.get_example(0)  # get first example
 
 output: ModelOutput = model(

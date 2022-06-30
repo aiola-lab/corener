@@ -21,7 +21,7 @@ The model checkpoint are available at Huggingface's model hub:
 
 ## Installation
 
-```bash
+```shell
 git clone https://github.com/aiola-lab/corener.git
 cd corener
 pip install --upgrade pip
@@ -36,25 +36,24 @@ python -m spacy download en_core_web_sm
 import json
 
 from transformers import AutoTokenizer
-from corener.models import Corener, ModelOutput
+
 from corener.data import MTLDataset
+from corener.models import Corener, ModelOutput
 from corener.utils.prediction import convert_model_output
 
-
-tokenizer = AutoTokenizer.from_pretrained("aiola/roberta-base-corener")
-model = Corener.from_pretrained("aiola/roberta-base-corener")
+model_name = "aiola/roberta-base-corener"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = Corener.from_pretrained(model_name)
 model.eval()
 
-examples = [
-    "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
-]
+input_text = "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."
 
 dataset = MTLDataset(
-    types=model.config.types, 
+    types=model.config.types,
     tokenizer=tokenizer,
     train_mode=False,
 )
-dataset.read_dataset(examples)
+dataset.read_dataset([input_text])
 example = dataset.get_example(0)  # get first example
 
 output: ModelOutput = model(
@@ -75,7 +74,7 @@ print(json.dumps(convert_model_output(output=output, batch=example, dataset=data
 
 Training CLI example:
 
-```bash
+```shell
 python train.py --train-path path/to/train.json \
   --val-path path/to/val.json \
   --types-path path/to/types.json \
@@ -88,7 +87,7 @@ python train.py --train-path path/to/train.json \
 
 Inference example and output.
 
-```bash
+```shell
 python inference.py 
   --artifact-path path/to/artifacts \ 
   --input "In 2009, ABC increased its margin by 10%. The company used to manufacture its car in Thailand but moved the factories to China."

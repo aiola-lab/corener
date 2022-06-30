@@ -1,5 +1,6 @@
 import json
 from collections import OrderedDict
+from pathlib import Path
 from typing import List, Union
 
 import spacy
@@ -347,6 +348,11 @@ class DataParser:
                     )
 
     def _read_from_file(self, path):
+        assert Path(path).is_file(), (
+            f"File '{path}' does not exists. If you are trying to load a text as an example,"
+            f" please use list of texts."
+        )
+
         with open(path, "r") as input_file:
             documents = json.load(input_file)
 
