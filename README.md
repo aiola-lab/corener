@@ -11,6 +11,10 @@ We model NER as a span classification task, and relation extraction as a multi-l
 Similarly, model EMD as a span classification task and CR as a binary classification of (EMD) span tuples.
 To construct the CR clusters, we keep the top antecedent of each mention, then compute the connected components of the mentions' undirected graph.
 
+## Demo
+
+We released an online demo so you can easily play with the model. Check it out: [http://corener-demo.aiola-lab.com]().
+
 ## Model checkpoints
 
 We release RoBERTa-based CoReNer models, finetuned on the 4 tasks (NER, RE, EMD and CR) using the Ontonotes and CoNLL04 datasets.
