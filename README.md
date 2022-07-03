@@ -13,7 +13,7 @@ To construct the CR clusters, we keep the top antecedent of each mention, then c
 
 ## Demo
 
-We released an online demo so you can easily play with the model. Check it out: [http://corener-demo.aiola-lab.com]().
+We released an online demo so you can easily play with the model. Check it out: [http://corener-demo.aiola-lab.com](http://corener-demo.aiola-lab.com).
 
 ## Model checkpoints
 
